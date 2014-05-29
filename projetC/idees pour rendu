@@ -1,0 +1,35 @@
+ordre de dev
+
+1) faire prog v1 
+while((c==getchar())!=EOF)
+	write(1, &c, 1);
+
+2) uniquement le filbuf à faire
+
+3) fopen(nomFichier, "r") qui ne fait que de la lecture
+4) fclose(f)
+5) cat
+6) flushbuf
+
+#define MAX 50
+struct _iobuf IOB[50] = {
+	{0, NULL, NULL, 0, _IOREAD, 0}
+	{0, NULL, NULL, 0, _IOREAD, 1}
+	{0, NULL, NULL, 0, _IOREAD, 2}
+}
+
+int _filbuf(FILE *f){
+	
+	int n, c;
+
+	// controles a faire
+	alouer eventuellement un buffer
+	verifier que f est en lecture
+
+	//
+	n = read(f->_file, &c, 1)
+	f->cnt = 0;
+	return (n)?c:EOF;
+}
+
+7) free
