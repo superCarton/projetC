@@ -1,0 +1,6 @@
+struct _iobuf :
+	_cnt : compteur de caractère
+	*_ptr : pointeur sur la tete de lecture du buffer
+	*_base : pointeur sur le premier element du buffer
+	_bufsize : taille du buffer
+	_flag :
