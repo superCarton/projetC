@@ -47,6 +47,35 @@ int _filbuf(FILE *f){
 	return (n)?c:EOF;
 }
 
+int _flsbuf(unsigned char c, FILE * s) {
+  
+ // Test si le buffer a été créé
+ if (!(s->_flag & _IOMYBUF)){
+	
+	s->_flag|= _IOMYBUF;
+	s->_bufsiz = BUFSIZ;
+	s->_ptr = s->_base = malloc(s->_bufsiz);
+        if (!s->_base) {
+	    s->_flag |= _IOERR;
+	    return (int)EOF;
+        }
+ }
+ if (s->_flag & _IOWRT) {
+        *s->_ptr++ = c;
+ }
+
+ if (c == '\n') {
+      
+      if (write(s->_file, (char *)s->_base, -(s->_cnt)) != -(s->_cnt)) { 
+          s->_flag |= _IOERR;
+	  return (int)EOF;
+      }
+      s->_ptr = s->_base;
+      s->_cnt = 0;
+ }
+
+} 
+
 int main(void){
 	int c;
 	while((c==getchar())!=EOF)

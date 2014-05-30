@@ -1,0 +1,105 @@
+#include "stdio1.h"
+
+extern int _flsbuf(unsigned char c, FILE *f);
+extern int _filbuf(FILE * f);
+FILE *fopen(const char *path, const char *mode);
+void setbuf(FILE *stream, char *buf);
+int setvbuf(FILE *stream, char *buf, int mode, int size);
+int fclose(FILE *fp);
+
+extern int _flsbuf(unsigned char c, FILE * s) {
+  
+    int count;
+    char tmp[1];
+
+    if (s->_bufsize <= 1) {
+	/*
+	 * This stream is unbuffered:  write the character
+	 * out to the file.
+	 */
+        s->_cnt = 0;
+        tmp[0] = c;
+        if (write(s->_file, tmp, 1) != 1){
+            s->_flag |= _IOERR;
+	    return (int)EOF;
+	}
+	return (int)c;
+    }
+
+    if (!(s->_base)) {
+        /*
+         * No buffer has yet been allocated to this stream.
+         * Allocate dynamic memory for a buffer:
+         */
+        s->_ptr = s->_base = malloc(s->_bufsize);
+        s->_cnt = s->_bufsize;
+        if (!s->_base) {
+            s->_flag |= _IOERR;
+	    return (int)EOF;
+        }
+    }
+
+    if (s->_ptr == s->_base + s->_bufsize) {
+	/*
+	 * The buffer may be full, if so write it out to the file:
+	 */
+        if (write(s->_file, (char *)s->_base, s->_bufsize) != s->_bufsize) {
+            goto err;
+        }
+        s->_ptr = s->_base;
+        s->_cnt = s->_bufsize;
+        s->_flag &= ~_IODIRTY;
+    }
+
+    if (s->_flag & _IOWRT || s->_flag & _IORW) {
+	/*
+	 * If the file has write access, then the character can be
+	 * copied to the buffer:
+	 */
+        s->_flag |= _IODIRTY; 
+        *s->_ptr++ = c;
+        s->_cnt--;
+    }
+
+    if ((s->_flag & (_IOLBF | _IODIRTY)) == (_IOLBF | _IODIRTY)) {
+	/*
+	 * If the file is line buffered, then we need to check for '\n'
+	 * to see if the buffer needs to be written:
+	 */
+       if (c == '\n') {
+           count = s->_ptr - s->_base;
+           if (write(s->_fd, (char *)s->_base, count) != count) { 
+               goto err;
+           }
+           s->_ptr = s->_base;
+           s->_flag &= ~_IODIRTY;
+       }
+       s->_cnt = 0;
+    } 
+
+} 
+
+extern int _flsbuf(unsigned char c, FILE * s) {
+  
+ // Test si le buffer a été créé
+ if (!(s->_flag & _IOMYBUF)){
+	s->_bufsize = BUFSIZ;
+	s->_ptr = s->_base = malloc(s->_bufsize);
+        if (!s->_base) {
+	    s->_flag |= _IOERR;
+	    return (int)EOF;
+        }
+ }
+
+ if (c == '\n') {
+      int count = s->_ptr - s->_base;
+      if (write(s->_file, (char *)s->_base, -(s->count)) != count) { 
+          s->_flag |= _IOERR;
+	  return (int)EOF;
+      }
+      s->_ptr = s->_base;
+ }
+
+ 
+
+} 
