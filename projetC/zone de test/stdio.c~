@@ -15,51 +15,54 @@ int fclose(FILE *fp);*/
 
 int _filbuf(FILE *f){
 
-	int n, c, size, courant;
+int n, c, size, courant;
+int readed = EOF;
 	
-	/* verifie que f est en mode lecture */
-	if (f->_flag & _IORW){
-         	f->_flag |= _IOREAD;
-	}
+/* verifie que f est en mode lecture */
+if (f->_flag & _IORW){
+       	f->_flag |= _IOREAD;
+}
 
-	if ((f->_flag&_IOREAD) == 0){
-        	return(EOF);
-	}
-
-
-	/* alloue le buffer si il est nul */
-	if (!f->_base){
-		f->_base = malloc(BUFSIZ);
-		f->_ptr = f->_base;
-		f->_cnt = 0;
-		f->_bufsiz = BUFSIZ;
-	}
+if (!(f->_flag&_IOREAD)){
+       	return(EOF);
+}
 
 
-	/*if (f == stdin) {
-          if (stdout->_flag&_IOLBF)
-              fflush(stdout);
-          if (stderr->_flag&_IOLBF)
-               fflush(stderr);
-        }*/
+/* alloue le buffer si il est nul */
+if (!f->_base){
+	f->_flag|= _IOMYBUF;
+	f->_base = malloc(BUFSIZ);
+	f->_ptr = f->_base;
+	f->_cnt = 0;
+	f->_bufsiz = BUFSIZ;
+}
 
-
-	if(f == stdin){
-		f->_cnt = MAX;
-	} else {
-		size = 1;
+/* calcule la taille initiale du compteur */
+if (f->_bufsiz) {
+	size = 1;
+	read(fileno(f),&courant,1);
+	while(courant!='\n')
+	{
+		size++;
 		read(fileno(f),&courant,1);
-		while(courant!='\n')
-		{
-		        size++;
-		        read(fileno(f),&courant,1);
-		}
-
-		f->_cnt = size;
 	}
+	f->_cnt = size;
+} else {
+   	f->_cnt = 0;
+}
 
-	write(1, f->_cnt, sizeof(int));
-	return (f->_cnt>0)?size:EOF;
+
+if (f->_cnt < 0) {
+	f->_flag |= _IOERR;
+} else if (!f->_cnt) {
+	f->_flag |= _IOEOF;
+} else {
+	f->_flag &= ~_IOEOF;
+	f->_cnt--;
+	readed = *f->_ptr++;
+}
+
+return readed;
 }
 
 int _flsbuf(unsigned char c, FILE * s) {
@@ -102,12 +105,18 @@ void tracer(FILE *f)
 }
 
 int main(void){
-	tracer(stdout);
+	/*tracer(stdout);
 	putc('X',stdout);
 	tracer(stdout);
 	putc('Y',stdout);
 	tracer(stdout);
 	putc('\n',stdout);
-	tracer(stdout);
+	tracer(stdout);*/
+tracer(stdin);
+getchar();
+tracer(stdin);
+getchar();
+tracer(stdin);
+
 	return 0;
 }
