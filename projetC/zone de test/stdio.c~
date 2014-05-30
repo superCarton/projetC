@@ -58,14 +58,56 @@ int _filbuf(FILE *f){
 		f->_cnt = size;
 	}
 
-	write(1, f->_cnt, 2);
+	write(1, f->_cnt, sizeof(int));
 	return (f->_cnt>0)?size:EOF;
 }
 
-int main(void){
+int _flsbuf(unsigned char c, FILE * s) {
+  
+ // Test si le buffer a été créé
+ if (!(s->_flag & _IOMYBUF)){
+	
+	s->_flag|= _IOMYBUF;
+	s->_bufsiz = BUFSIZ;
+	s->_ptr = s->_base = malloc(s->_bufsiz);
+        if (!s->_base) {
+	    s->_flag |= _IOERR;
+	    return (int)EOF;
+        }
+ }
+ if (s->_flag & _IOWRT) {
+        *s->_ptr++ = c;
+ }
 
-	char c;
-	while((c==getchar())!=EOF){
-		write(1, &c, 1);
-	}
+ if (c == '\n') {
+      
+      if (write(s->_file, (char *)s->_base, -(s->_cnt)) != -(s->_cnt)) { 
+          s->_flag |= _IOERR;
+	  return (int)EOF;
+      }
+      s->_ptr = s->_base;
+      s->_cnt = 0;
+ }
+
+} 
+
+void tracer(FILE *f)
+{
+	char buffer[500];
+	snprintf(buffer, 500, "TRACE FILE %p\n", f);
+	write(2,buffer,strlen(buffer));
+	snprintf(buffer, 500,
+		"\tcnt: %d, ptr: %p, base: %p, bufsiz: %d, flag: %x, file:%d\n\n", f->_cnt, f->_ptr, f->_base, f->_bufsiz, f->_flag, f->_file);
+	write(2,buffer,strlen(buffer));
+}
+
+int main(void){
+	tracer(stdout);
+	putc('X',stdout);
+	tracer(stdout);
+	putc('Y',stdout);
+	tracer(stdout);
+	putc('\n',stdout);
+	tracer(stdout);
+	return 0;
 }

@@ -41,7 +41,7 @@ extern	struct _iobuf {
 
 struct _iobuf _IOB[50] = {
 	{0, NULL, NULL, 0, _IOREAD, 0},
-	{0, NULL, NULL, 0, _IOREAD, 1},
+	{0, NULL, NULL, 0, _IOLBF | _IOWRT, 1},
 	{0, NULL, NULL, 0, _IOREAD, 2},
 };
 
@@ -52,6 +52,7 @@ struct _iobuf _IOB[50] = {
 
 extern int _flsbuf(unsigned char c, FILE *f);
 extern int _filbuf(FILE * f);
+
 #ifdef lint	/* so that lint likes (void)putc(a,b) */
 extern int putc();
 extern int getc();

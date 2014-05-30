@@ -41,7 +41,7 @@ extern	struct _iobuf {
 
 struct _iobuf _IOB[50] = {
 	{0, NULL, NULL, 0, _IOREAD, 0},
-	{0, NULL, NULL, 0, _IOREAD, 1},
+	{0, NULL, NULL, 0, _IOLBF | _IOWRT, 1},
 	{0, NULL, NULL, 0, _IOREAD, 2},
 };
 
@@ -73,7 +73,7 @@ extern int getc();
 #define	fileno(p)	((p)->_file)
 #define	clearerr(p)	(void) ((p)->_flag &= ~(_IOERR|_IOEOF))
 
-
+void tracer(FILE *stream);
 FILE *fopen(const char *path, const char *mode);
 FILE *fdopen(int fd, const char *mode);
 FILE *freopen(const char *path, const char *mode, FILE *stream);
