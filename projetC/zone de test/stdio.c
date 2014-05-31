@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
 
 /*
 extern int _flsbuf(unsigned char c, FILE *f);
@@ -130,6 +132,112 @@ int fclose(FILE *fp)
 	fp->_flag=0;
 	fp->_file=0;
 	return r;
+}
+
+FILE *fopen(const char *filename, const char *openmode)
+{
+
+    int fd;
+    unsigned mode;
+    FILE *file;
+
+    if (!strcmp(openmode, "r")){
+        mode |= (unsigned)O_RDONLY;
+    } else if (!strcmp(openmode, "w")){
+        mode |= (unsigned)(O_WRONLY | O_CREAT | O_TRUNC);
+    } else if (!strcmp(openmode, "rw")){
+	mode |= (unsigned)(O_RDONLY | O_WRONLY | O_CREAT | O_TRUNC);
+    }    
+
+    /* open a file */
+    fd = open((char *)filename, mode,
+              (unsigned)(S_IRUSR | S_IWUSR |
+                         S_IRGRP | S_IWGRP |
+                         S_IROTH | S_IWOTH));
+
+    if (fd == -1){ /* erreur a l'ouverture */
+	errno = ENOENT;
+	return NULL;
+    }
+    else { /* creer le fichier */
+
+        if (!(file = (FILE *)malloc(sizeof(FILE)))) {
+	    close(fd);
+	    errno = ENOMEM;
+	    return NULL;
+	}
+
+        file->_ptr = NULL;
+        file->_cnt = 0;
+        file->_base = NULL;
+        file->_flag = 0;
+	file->_bufsiz = (isatty(fd)) ? 1 : BUFSIZ;
+
+        if (!strcmp(openmode, "rw"))
+            file->_flag |= _IORW;
+        else if (!strcmp(openmode, "w"))
+            file->_flag |= _IOWRT;
+        else if (!strcmp(openmode, "r"))
+            file->_flag |= _IOREAD;
+	else {
+	    close(fd);
+	    return NULL;
+	}
+  
+        return file;
+    }
+}
+
+void setbuf(FILE *stream, char *buf){
+    if (buf != NULL)
+        setvbuf(stream, buf, _IOFBF, BUFSIZ);
+    else
+        setvbuf(stream, NULL, _IONBF, 0);
+}
+
+int setvbuf(FILE *stream, char *buf, int mode, int size){
+
+    int flag = 0;
+    int buf_size;
+    unsigned char *base = NULL;
+    
+    
+    if (stream->_cnt || stream->_base)
+        return -1;
+
+    if (mode == _IOFBF) {		/* I/O bufferisé totaalement */
+        flag &= ~_IOLBF & ~_IONBF;
+        flag |= _IOFBF;
+        buf_size = BUFSIZ;
+
+    } else if (mode == _IOLBF) {	/* I/O bufferisé ligne par ligne */
+        flag &= ~_IONBF & ~_IOFBF;
+        flag |= _IOLBF;
+        buf_size = BUFSIZ;
+
+    } else if (mode == _IONBF) {	/* I/O débufferisé */
+        flag &= ~_IOFBF & ~_IOLBF;
+        flag |= _IONBF;
+        buf_size = 1;
+
+    } else {
+        return -1;
+    }
+
+    if (buf) {
+        base = (unsigned char *)buf;
+        flag |= _IOMYBUF;
+    }
+
+    stream->_flag |= flag;
+    stream->_bufsiz  = buf_size;
+
+    if (base)  {
+    	stream->_ptr = base;
+    	stream->_base = base;
+    }
+
+    return 0;
 }
 
 void tracer(FILE *f)
