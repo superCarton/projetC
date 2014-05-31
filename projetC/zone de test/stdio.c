@@ -94,6 +94,44 @@ int _flsbuf(unsigned char c, FILE * s) {
 
 } 
 
+int fflush(FILE *f)
+{
+	if (f->_flag & _IOWRT && (f->_flag & _IOMYBUF) && f->_base-f->_ptr!=0)
+	{
+		if (write(f->_file,f->_base,-f->_cnt)!=-f->_cnt){
+			return EOF;
+		} else {
+			f->_ptr=f->_base;
+			f->_cnt=0;
+		}
+	}
+	return 0;
+	
+}
+
+int fclose(FILE *fp)
+{
+	int r = EOF;
+	if (fp->_flag & (_IOREAD|_IOWRT|_IORW))
+	{
+		r = fflush(fp);
+    		close(fp->_file);
+		if (fp->_flag & _IOMYBUF){
+			free(fp->_base);
+		}
+	}
+        if (fp == stdin || fp == stdout || fp == stderr){
+        	r = 0;
+	}
+	fp->_cnt = 0;
+	fp->_base=(char *)NULL;
+	fp->_ptr=(char *)NULL;
+	fp->_bufsiz=0;
+	fp->_flag=0;
+	fp->_file=0;
+	return r;
+}
+
 void tracer(FILE *f)
 {
 	char buffer[500];
@@ -105,18 +143,19 @@ void tracer(FILE *f)
 }
 
 int main(void){
-	/*tracer(stdout);
+	tracer(stdout);
 	putc('X',stdout);
 	tracer(stdout);
 	putc('Y',stdout);
 	tracer(stdout);
-	putc('\n',stdout);
-	tracer(stdout);*/
-tracer(stdin);
+	fclose(stdout);
+	//putc('\n',stdout);
+	tracer(stdout);
+/*tracer(stdin);
 getchar();
 tracer(stdin);
 getchar();
-tracer(stdin);
+tracer(stdin);*/
 
 	return 0;
 }
